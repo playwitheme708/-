@@ -22,7 +22,7 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = AlipayFullscreenFix
 
 AlipayFullscreenFix_FILES = Tweak.xm
-AlipayFullscreenFix_CFLAGS = -fobjc-arc -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter
+AlipayFullscreenFix_CFLAGS = -fobjc-arc -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-deprecated-declarations
 AlipayFullscreenFix_FRAMEWORKS = UIKit Foundation CoreGraphics
 AlipayFullscreenFix_LIBRARIES = substrate
 
