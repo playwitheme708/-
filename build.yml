@@ -1,0 +1,83 @@
+name: Build AlipayFullscreenFix
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      scheme:
+        description: '打包方案 rootless / rootful'
+        required: true
+        default: 'rootless'
+        type: choice
+        options:
+          - rootless
+          - rootful
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  THEOS: ${{ github.workspace }}/theos
+  SCHEME: ${{ github.event.inputs.scheme || 'rootless' }}
+
+jobs:
+  build:
+    name: Build (${{ github.event.inputs.scheme || 'rootless' }})
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcode-select -p
+          xcodebuild -version || true
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Install build dependencies
+        run: |
+          brew install make dpkg ldid
+
+      - name: Fetch Theos (+ submodules)
+        run: |
+          git clone https://github.com/theos/theos.git "$THEOS"
+          cd "$THEOS"
+          git submodule update --init --recursive
+
+      - name: Verify Substrate headers/libs are present
+        run: |
+          ls -l "$THEOS/vendor/include/substrate.h"
+          ls -l "$THEOS/vendor/lib/iphone/rootless/libsubstrate.tbd"
+          ls -l "$THEOS/vendor/lib/libsubstrate.tbd"
+
+      - name: Build .deb
+        run: |
+          export PATH="$(brew --prefix)/opt/make/libexec/gnubin:$PATH"
+          make --version | head -1
+          echo "== scheme: $SCHEME =="
+          make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME="$SCHEME"
+
+      - name: Summarize artifact
+        run: |
+          ls -lh packages/
+          dpkg-deb -c packages/*.deb | head -20
+          dpkg-deb -I packages/*.deb
+
+      - name: Upload .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlipayFullscreenFix-${{ github.event.inputs.scheme || 'rootless' }}-deb
+          path: packages/*.deb
+          if-no-files-found: error
+
+      - name: Publish to Releases (tag only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: packages/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

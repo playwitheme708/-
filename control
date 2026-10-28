@@ -1,0 +1,9 @@
+Package: com.karma.alipayfullscreenfix
+Name: AlipayFullscreenFix
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: 支付宝全屏黑边修复。修复各类分屏 / 改比例注入导致全屏窗口底部出现黑框的问题。移植自 QQFullscreenFix 2.0.1。
+Maintainer: Administrator
+Author: Administrator
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 15.0)
